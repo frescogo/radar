@@ -17,9 +17,12 @@ void loop (void) {
         zero = true;
     } else {
         zero = false;
-        //Serial.print((vel > 0) ? "->" : "<-");
-        //Serial.print(' ');
-        //Serial.println(abs(vel));
+#if 1
+        Serial.print((vel > 0) ? "->" : "<-");
+        Serial.print(' ');
+        Serial.println(abs(vel));
+#else
         show(&s);
+#endif
     }
 }

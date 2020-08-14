@@ -1,4 +1,4 @@
-#define DT_500 500
+#define DT_750 750
 
 typedef struct {
     char peak_dir;
@@ -108,7 +108,7 @@ int radar_read (Radar_S* s) {
     // ignora golpes consecutivos na mesma direcao em menos de 500ms
     u32 now = millis();
     u32 dt = now - onow;
-    if (dir==odir && dt<DT_500) {
+    if (dir==odir && dt<DT_750) {
         return 0;
     }
 
@@ -116,7 +116,7 @@ int radar_read (Radar_S* s) {
         (!check(s))                     ||  // erro no pacote
         (vel!=0 && (size<3 || size>5))  ||  // tamanho incompativel
         //(s->peak_dir != s->live_dir)    ||  // direcoes incompativeis
-        //(ratio < 15)                    ||  // ratio muito baixo
+        (ratio < 10)                    ||  // ratio muito baixo
         false
     ) {
         return radar_read(s);               // tenta novamente
