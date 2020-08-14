@@ -1,11 +1,11 @@
 // TODO:
-// - ritmo nao faz sentido sem distancia
 // - fazer tempo em tempo real?
 // - golpe 0 a cada 5s?
 
+#define AFERICAO 'r'
 #define MAJOR    3
-#define MINOR    0
-#define REVISION 2
+#define MINOR    1
+#define REVISION 0
 
 //#define DEBUG
 
@@ -47,16 +47,11 @@ typedef unsigned long u32;
 #define REF_TIMEOUT     300         // 5 mins
 
 #define REF_HITS        150
-#define REF_REV         (S.reves ?  15 :   0)
-#define REF_NRM         (S.reves ? 135 : 150)
-
 #define REF_CONT        160         // 1.6%
 #define REF_ABORT       15          // 15s per fall
 
-#define HITS_MAX        650
-#define HITS_REF        (HITS_NRM + HITS_REV)
-#define HITS_NRM        min(REF_NRM,  max(1, REF_NRM * S.timeout / REF_TIMEOUT / 1000))
-#define HITS_REV        min(REF_REV,  max(1, REF_REV * S.timeout / REF_TIMEOUT / 1000))
+#define HITS_MAX        1000
+#define HITS_CUR        min(REF_HITS,  max(1, REF_HITS * S.timeout / REF_TIMEOUT / 1000))
 
 #define HIT_KMH_MAX     99          // safe value to avoid errors
 #define HIT_KMH_50      50
@@ -84,6 +79,8 @@ typedef unsigned long u32;
 #define CONT_PCT        (((u32)REF_TIMEOUT*1000) * REF_CONT / S.timeout)
 #define ABORT_FALLS     (S.timeout / REF_ABORT / 1000)
 
+#define SOUND_DT        100
+
 static int  STATE;
 static char STR[64];
 
@@ -103,10 +100,7 @@ typedef struct {
     char juiz[NAME_MAX+1];      // = "Juiz"
     char names[2][NAME_MAX+1];  // = { "Atleta ESQ", "Atleta DIR" }
     u32  timeout;               // = 180 * ((u32)1000) ms
-    u16  distancia;             // = 700 cm
     s8   equilibrio;            // = sim/nao
-    u8   maxima;                // = 85 kmh
-    u16  reves;                 // = 180  (tempo minimo de segurar para o back)
 
     u16  descanso;              // cs (ms*10) (até 650s de descanso)
     u16  hit;
@@ -114,33 +108,19 @@ typedef struct {
 } Save;
 static Save S;
 
-enum {
-    LADO_NRM = 0,
-    LADO_REV,
-    LADO_NRM_REV
-};
-
 typedef struct {
     u16 golpes;
     u8  minima;
     u8  maxima;
     u16 media1;     // 6156 = 61.56 km/h
     u16 pontos;
-} Lado;
-
-// TODO: avg2, total/reves/normal->tot/rev/nrm
-typedef struct {
-    u16  pontos;                    // reves+normal (x100)
-    Lado lados[LADO_NRM_REV];
 } Jog;
 
 typedef struct {
     // calculated when required
     u32  time;                        // ms (total time)
     u8   saques;
-    s8   ritmo;                       // kmh
     u16  ataques;
-
     u16  pontos;
     Jog  jogs[2];
 } Game;
@@ -168,11 +148,15 @@ static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
 #include "serial.c.h"
 #include "xcel.c.h"
 #include "pc.c.h"
+#if 1
+#include "mock.c.h"
+#else
 #include "radar.c.h"
+#endif
 
 void Sound (s8 kmh) {
     int ton = NOTES[min(max(0,kmh/10-4), 4)];
-    tone(PIN_TONE, ton, 50);
+    tone(PIN_TONE, ton, SOUND_DT);
 }
 
 int Await_Input (bool serial, bool hold, s8* kmh) {
@@ -255,11 +239,8 @@ void EEPROM_Default (void) {
     strcpy(S.juiz,     "?");
     strcpy(S.names[0], "Atleta ESQ");
     strcpy(S.names[1], "Atleta DIR");
-    S.distancia  = 750;
     S.timeout    = DEF_TIMEOUT * ((u32)1000);
     S.equilibrio = 1;
-    S.maxima     = 85;
-    S.reves      = 0;
 }
 
 void setup (void) {
@@ -270,11 +251,15 @@ void setup (void) {
     pinMode(PIN_LEFT,  INPUT_PULLUP);
     pinMode(PIN_RIGHT, INPUT_PULLUP);
 
-    delay(2000);
-    if (Serial.available()) {
-        MOD = (TMOD) Serial.read();
-    } else {
-        MOD = MOD_CEL;
+    MOD = MOD_CEL;
+    Serial.write(1);
+
+    for (int i=0; i<10; i++) {
+        if (Serial.available() > 0) {
+            MOD = (TMOD) Serial.read();
+            break;
+        }
+        delay(100);
     }
 
     EEPROM_Load();
@@ -413,7 +398,7 @@ _BREAK2:
 
         u32 t0 = millis();
         Desc(t0, &desc0, true);
-        S.hits[S.hit++] = { 0, (s8)kmh_ };
+        S.hits[S.hit++] = { 0, kmh_ };
         Sound(kmh);
         XMOD(CEL_Service(is_out), PC_Nop());
         XMOD(CEL_Hit(is_out,false,kmh), PC_Hit(is_out,false,kmh));
@@ -445,13 +430,13 @@ _BREAK2:
             t0 = t1;
 
             dt = min(dt/100, 255);              // maximo DT=25.500ms
-            S.hits[S.hit++] = { (u8)dt, (s8)kmh_ };
+            S.hits[S.hit++] = { (u8)dt, kmh_ };
 
             u8 al_now = 0;
             if (G.time+dt*100 > alarm()) {
                 tone(PIN_TONE, NOTE_C7, 250);
                 al_now = 1;
-            } else {
+            } else if (kmh >= HIT_KMH_50){
                 Sound(kmh);
             }
 
@@ -468,8 +453,9 @@ _BREAK2:
                 goto _TIMEOUT;
             }
 
-            if (!al_now && S.equilibrio && G.time>=30000 && PT_Behind()==is_out) {
-                tone(PIN_TONE, NOTE_C2, 30);
+            if (!al_now && kmh>=HIT_KMH_50 && S.equilibrio && G.time>=30000 && PT_Behind()==is_out) {
+                delay(SOUND_DT*3/2);
+                tone(PIN_TONE, NOTE_C2, SOUND_DT/2);
             }
             XMOD(CEL_Hit(is_out,false,kmh), PC_Hit(is_out,false,kmh));
         }

@@ -1,5 +1,7 @@
 void CEL_Restart (void) {
     Serial.print(F("= FrescoGO! (versao "));
+    Serial.print(AFERICAO);
+    Serial.print(".");
     Serial.print(MAJOR);
     Serial.print(".");
     Serial.print(MINOR);

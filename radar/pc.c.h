@@ -35,27 +35,14 @@ void PC_Seq (void) {
 }
 
 void PC_Player (int I) {
-    Serial.print(G.jogs[I].pontos);      // pontuacao
-    Serial.print(F(";"));
     Serial.print(PT_Behind() == I ? 1 : 0);   // 1=atras | 0=ok
     Serial.print(F(";"));
-    //Serial.print(G.max_[I]);          // maior velocidade
-    //Serial.print(F(";"));
-
-    for (int i=0; i<LADO_NRM_REV; i++) {
-        Serial.print(G.jogs[I].lados[i].pontos);
-        Serial.print(F(";"));
-        Serial.print(G.jogs[I].lados[i].golpes);
-        Serial.print(F(";"));
-        Serial.print((i==LADO_NRM) ? HITS_NRM : HITS_REV);
-        Serial.print(F(";"));
-        Serial.print(G.jogs[I].lados[i].media1);
-        Serial.print(F(";"));
-        Serial.print(G.jogs[I].lados[i].minima);
-        Serial.print(F(";"));
-        Serial.print(G.jogs[I].lados[i].maxima);
-        Serial.print(F(";"));
-    }
+    Serial.print(G.jogs[I].pontos);
+    Serial.print(F(";"));
+    Serial.print(G.jogs[I].golpes);
+    Serial.print(F(";"));
+    Serial.print(G.jogs[I].media1);
+    Serial.print(F(";"));
 }
 
 void PC_Hit (int player, bool is_back, int kmh) {
@@ -78,8 +65,6 @@ void PC_Tick (void) {
     Serial.print(G.pontos);             // total da dupla
     Serial.print(F(";"));
     Serial.print(S.hit);                // total de golpes
-    Serial.print(F(";"));
-    Serial.print((int)G.ritmo);       // media simples
     Serial.print(F(";"));
     PC_Player(0);
     PC_Player(1);
