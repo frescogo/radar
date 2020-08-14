@@ -133,7 +133,9 @@ enum {
     IN_RESTART,
     IN_UNDO,
     IN_RESET,
-    IN_RADAR
+    IN_RADAR,
+    IN_LEFT,
+    IN_RIGHT
 };
 
 int Falls (void) {
@@ -148,7 +150,7 @@ static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
 #include "serial.c.h"
 #include "xcel.c.h"
 #include "pc.c.h"
-#if 1
+#if 0
 #include "mock.c.h"
 #else
 #include "radar.c.h"
@@ -188,6 +190,12 @@ int Await_Input (bool serial, bool hold, s8* kmh) {
         if (digitalRead(PIN_CFG) == HIGH) {
             pressed = 0;
             old = now;
+            if (pin_left == LOW) {
+                return IN_LEFT;
+            }
+            if (pin_right == LOW) {
+                return IN_RIGHT;
+            }
         }
 
         // CFG PRESSED
@@ -380,9 +388,23 @@ _SERVICE:
                 case IN_GO_FALL:
                     Desc(millis(), &desc0, false);
                     goto _SERVICE;
+
                 case IN_RADAR:
                     kmh = abs(kmh_);
                     is_out = (kmh_ > 0);
+                    goto _BREAK2;
+
+                case IN_LEFT:
+                    kmh_ = random(300,1000);
+                    kmh  = abs(kmh_);
+                    is_out = true;
+                    delay(250);
+                    goto _BREAK2;
+                case IN_RIGHT:
+                    kmh_ = -random(300,1000);
+                    kmh  = abs(kmh_);
+                    is_out = false;
+                    delay(250);
                     goto _BREAK2;
 
                 case IN_NONE:
@@ -421,6 +443,18 @@ _BREAK2:
                 } else if (got == IN_RADAR) {
                     kmh = abs(kmh_);
                     is_out = (kmh_ > 0);
+                    break;
+                } else if (got == IN_LEFT) {
+                    kmh_ = random(30,100);
+                    kmh  = abs(kmh_);
+                    is_out = true;
+                    delay(250);
+                    break;
+                } else if (got == IN_RIGHT) {
+                    kmh_ = -random(30,100);
+                    kmh  = abs(kmh_);
+                    is_out = false;
+                    delay(250);
                     break;
                 }
             }
