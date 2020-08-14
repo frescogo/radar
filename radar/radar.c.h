@@ -1,4 +1,5 @@
-#define DT_500 500
+#define DT_750 750
+#define REP_10  10
 
 typedef struct {
     char peak_dir;
@@ -85,6 +86,10 @@ int radar_read (Radar_S* s) {
     static u32  onow = millis();
     static char odir = '\0';
 
+    static int buf_i = 0;
+    static int buf[REP_10][2] = { {0,0},{0,0},{0,0},{0,0},{0,0},
+                                  {0,0},{0,0},{0,0},{0,0},{0,0} };
+
     while (1) {
         int n = Serial1.read();
         if (n == 0x83) {
@@ -100,31 +105,42 @@ int radar_read (Radar_S* s) {
 
     Serial1.readBytes((char*)s, sizeof(Radar_S));
 
-    char dir   = s->live_dir;       // live nunca se perde,
-    int  vel   = four(s->live_val); // mesmo com pico em direcao oposta
+    char dir   = s->peak_dir;
+    int  vel   = four(s->peak_val);
     int  size  = three(s->size);
     int  ratio = three(s->ratio);
 
     // ignora golpes consecutivos na mesma direcao em menos de 500ms
     u32 now = millis();
     u32 dt = now - onow;
-    if (dir==odir && dt<DT_500) {
+    if (dir==odir && dt<DT_750) {
         return 0;
     }
 
     if (
-        (!check(s))                     ||  // erro no pacote
-        (vel!=0 && (size<3 || size>5))  ||  // tamanho incompativel
-        //(s->peak_dir != s->live_dir)    ||  // direcoes incompativeis
-        //(ratio < 15)                    ||  // ratio muito baixo
+        (!check(s))                    ||  // erro no pacote
+        (vel == 0)                     ||  // bola nao detectada
+        //(size<3 || size>5)           ||  // tamanho incompativel
+        //(s->peak_dir != s->live_dir) ||  // direcoes incompativeis
+        //(ratio < 20)                 ||  // ratio muito baixo
         false
     ) {
-        return radar_read(s);               // tenta novamente
+        return 0;
     }
 
-    if (vel != 0) {
-        onow = now;
-        odir = dir;
+    buf[buf_i][0] = vel;
+    buf[buf_i][1] = dir;
+    buf_i = (buf_i + 1) % REP_10;
+    for (int i=1; i<REP_10; i++) {
+        if (buf[i][0]!=buf[0][0] || buf[i][1]!=buf[0][1]) {
+            return 0; // aceita somente 10 picos iguais na mesma direcao
+        }
     }
+    for (int i=0; i<REP_10; i++) {
+        buf[i][0] = buf[i][1] = 0;
+    }
+
+    onow = now;
+    odir = dir;
     return (dir == 'A') ? vel : -vel;
 }

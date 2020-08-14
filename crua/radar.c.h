@@ -118,12 +118,11 @@ int radar_read (Radar_S* s) {
     }
 
     if (
-        (!check(s))                     ||  // erro no pacote
-        (vel == 0)                      ||  // bola nao detectada
-// TODO: remover esse teste de tamanho
-        (size<3 || size>5)              ||  // tamanho incompativel
-        //(s->peak_dir != s->live_dir)    ||  // direcoes incompativeis
-        //(vel>0 && ratio<20)             ||  // ratio muito baixo
+        (!check(s))                    ||  // erro no pacote
+        (vel == 0)                     ||  // bola nao detectada
+        //(size<3 || size>5)           ||  // tamanho incompativel
+        //(s->peak_dir != s->live_dir) ||  // direcoes incompativeis
+        //(ratio < 20)                 ||  // ratio muito baixo
         false
     ) {
         return 0;
@@ -134,7 +133,7 @@ int radar_read (Radar_S* s) {
     buf_i = (buf_i + 1) % REP_10;
     for (int i=1; i<REP_10; i++) {
         if (buf[i][0]!=buf[0][0] || buf[i][1]!=buf[0][1]) {
-            return 0;               // aceita somente 4 picos iguais
+            return 0; // aceita somente 10 picos iguais na mesma direcao
         }
     }
     for (int i=0; i<REP_10; i++) {
