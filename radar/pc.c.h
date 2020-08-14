@@ -45,12 +45,10 @@ void PC_Player (int I) {
     Serial.print(F(";"));
 }
 
-void PC_Hit (int player, bool is_back, int kmh) {
+void PC_Hit (int player, int kmh) {
     Serial.print(PC_HIT);               // codigo de golpe
     Serial.print(F(";"));
     Serial.print(player);               // 0=esquerda | 1=direita
-    Serial.print(F(";"));
-    Serial.print(is_back);              // 0=normal   | 1=revez
     Serial.print(F(";"));
     Serial.print(kmh);                  // velocidade
     Serial.print(F(";"));
@@ -94,8 +92,8 @@ void PC_Nop (void) {
 
 void PC_Atualiza (void) {
     PC_Seq();
-    PC_Hit(0,0,0);
-    PC_Hit(1,0,0);
+    PC_Hit(0,0);
+    PC_Hit(1,0);
     PC_Tick();
     PC_Fall();
 }

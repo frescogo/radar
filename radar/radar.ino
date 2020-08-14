@@ -338,8 +338,8 @@ void loop (void)
                 case IN_RESTART:
                     goto _RESTART;
                 case IN_UNDO:
-                    if (S.hit > 0) {
 _UNDO:
+                    if (S.hit > 0) {
                         while (1) {
                             S.hit -= 1;
                             if (S.hit == 0) {
@@ -375,7 +375,7 @@ _SERVICE:
 
         s8 kmh_ = 0;
         u8 kmh  = 0;
-        int is_out;
+        int is_in;
 
         while (1) {
             int got = Await_Input(true,false,&kmh_);
@@ -391,19 +391,19 @@ _SERVICE:
 
                 case IN_RADAR:
                     kmh = abs(kmh_);
-                    is_out = (kmh_ > 0);
+                    is_in = (kmh_ < 0);
                     goto _BREAK2;
 
                 case IN_LEFT:
-                    kmh_ = random(300,1000);
+                    kmh_ = random(30,100);
                     kmh  = abs(kmh_);
-                    is_out = true;
+                    is_in = false;
                     delay(250);
                     goto _BREAK2;
                 case IN_RIGHT:
-                    kmh_ = -random(300,1000);
+                    kmh_ = -random(30,100);
                     kmh  = abs(kmh_);
-                    is_out = false;
+                    is_in = true;
                     delay(250);
                     goto _BREAK2;
 
@@ -422,8 +422,8 @@ _BREAK2:
         Desc(t0, &desc0, true);
         S.hits[S.hit++] = { 0, kmh_ };
         Sound(kmh);
-        XMOD(CEL_Service(is_out), PC_Nop());
-        XMOD(CEL_Hit(is_out,false,kmh), PC_Hit(is_out,false,kmh));
+        XMOD(CEL_Service(is_in), PC_Nop());
+        XMOD(CEL_Hit(is_in,kmh), PC_Hit(is_in,kmh));
         STATE = STATE_PLAYING;
         PT_All();
 
@@ -442,18 +442,18 @@ _BREAK2:
                     goto _FALL;
                 } else if (got == IN_RADAR) {
                     kmh = abs(kmh_);
-                    is_out = (kmh_ > 0);
+                    is_in = (kmh_ < 0);
                     break;
                 } else if (got == IN_LEFT) {
                     kmh_ = random(30,100);
                     kmh  = abs(kmh_);
-                    is_out = true;
+                    is_in = false;
                     delay(250);
                     break;
                 } else if (got == IN_RIGHT) {
                     kmh_ = -random(30,100);
                     kmh  = abs(kmh_);
-                    is_out = false;
+                    is_in = true;
                     delay(250);
                     break;
                 }
@@ -487,11 +487,11 @@ _BREAK2:
                 goto _TIMEOUT;
             }
 
-            if (!al_now && kmh>=HIT_KMH_50 && S.equilibrio && G.time>=30000 && PT_Behind()==is_out) {
+            if (!al_now && kmh>=HIT_KMH_50 && S.equilibrio && G.time>=30000 && PT_Behind()==is_in) {
                 delay(SOUND_DT*3/2);
                 tone(PIN_TONE, NOTE_C2, SOUND_DT/2);
             }
-            XMOD(CEL_Hit(is_out,false,kmh), PC_Hit(is_out,false,kmh));
+            XMOD(CEL_Hit(is_in,kmh), PC_Hit(is_in,kmh));
         }
 _FALL:
         if (Falls() >= ABORT_FALLS) {

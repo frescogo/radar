@@ -16,16 +16,12 @@ void CEL_Service (int player) {
     Serial.println(F("  ESQ    DIR"));
 }
 
-void CEL_Hit (int player, bool is_back, int kmh) {
+void CEL_Hit (int player, int kmh) {
     Serial.print(F("   "));
     if (player == 1) {
         Serial.print(F("      "));
     }
-    Serial.print(kmh);
-    if (is_back) {
-        Serial.print(F(" !"));
-    }
-    Serial.println();
+    Serial.println(kmh);
 }
 
 void CEL_Fall (void) {

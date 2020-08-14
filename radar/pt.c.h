@@ -52,7 +52,7 @@ void PT_All (void) {
         u8 dt   = S.hits[i].dt;
         s8 kmh_ = S.hits[i].kmh;
         u8 kmh  = abs(kmh_);
-        int is_out = (kmh_ > 0);
+        int is_in = (kmh_ < 0);
 
         if (dt == 0) {
             G.saques++;
@@ -69,10 +69,10 @@ void PT_All (void) {
         }
 
         G.ataques++;
-        G.jogs[is_out].golpes++;
+        G.jogs[is_in].golpes++;
 
         // bests
-        u8* vec = bests[is_out];
+        u8* vec = bests[is_in];
         for (int j=0; j<HITS_CUR; j++) {
             if (kmh > vec[j]) {
                 for (int k=HITS_CUR-1; k>j; k--) {
