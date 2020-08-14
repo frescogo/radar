@@ -1,5 +1,7 @@
 #include "radar.c.h"
 
+#define PIN_TONE 11
+
 void setup (void) {
     Serial.begin(9600);
     radar_setup();
@@ -21,6 +23,11 @@ void loop (void) {
         Serial.print((vel > 0) ? "->" : "<-");
         Serial.print(' ');
         Serial.println(abs(vel));
+        if (vel > 0) {
+            tone(PIN_TONE, 1000, 100);
+        } else {
+            tone(PIN_TONE, 670,  100);
+        }
 #else
         show(&s);
 #endif
