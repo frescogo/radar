@@ -138,8 +138,32 @@ enum {
     IN_RIGHT
 };
 
-// tom dos golpes            50-      50-60    60-70    70-80    80+
-static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
+///////////////////////////////////////////////////////////////////////////////
+
+void EEPROM_Load (void) {
+    for (int i=0; i<sizeof(Save); i++) {
+        ((byte*)&S)[i] = EEPROM[i];
+    }
+    S.hit = min(S.hit, HITS_MAX);
+    S.names[0][NAME_MAX] = '\0';
+    S.names[1][NAME_MAX] = '\0';
+}
+
+void EEPROM_Save (void) {
+    for (int i=0; i<sizeof(Save); i++) {
+        EEPROM[i] = ((byte*)&S)[i];
+    }
+}
+
+void EEPROM_Default (void) {
+    strcpy(S.juiz,     "?");
+    strcpy(S.names[0], "Atleta ESQ");
+    strcpy(S.names[1], "Atleta DIR");
+    S.timeout    = DEF_TIMEOUT * ((u32)1000);
+    S.equilibrio = 1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 #include "pt.c.h"
 #include "serial.c.h"
@@ -150,6 +174,11 @@ static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
 #else
 #include "radar.c.h"
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+
+// tom dos golpes            50-      50-60    60-70    70-80    80+
+static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
 
 void Sound (s8 kmh) {
     int ton = NOTES[min(max(0,kmh/10-4), 4)];
@@ -221,29 +250,6 @@ int Await_Input (bool serial, bool hold, s8* kmh) {
             return IN_NONE;
         }
     }
-}
-
-void EEPROM_Load (void) {
-    for (int i=0; i<sizeof(Save); i++) {
-        ((byte*)&S)[i] = EEPROM[i];
-    }
-    S.hit = min(S.hit, HITS_MAX);
-    S.names[0][NAME_MAX] = '\0';
-    S.names[1][NAME_MAX] = '\0';
-}
-
-void EEPROM_Save (void) {
-    for (int i=0; i<sizeof(Save); i++) {
-        EEPROM[i] = ((byte*)&S)[i];
-    }
-}
-
-void EEPROM_Default (void) {
-    strcpy(S.juiz,     "?");
-    strcpy(S.names[0], "Atleta ESQ");
-    strcpy(S.names[1], "Atleta DIR");
-    S.timeout    = DEF_TIMEOUT * ((u32)1000);
-    S.equilibrio = 1;
 }
 
 void setup (void) {
