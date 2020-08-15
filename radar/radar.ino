@@ -324,26 +324,31 @@ void loop (void)
                     goto _RESTART;
                 case IN_UNDO:
 _UNDO:
-                    if (S.hit > 0) {
-                        while (1) {
-                            S.hit -= 1;
-                            if (S.hit == 0) {
-                                break;
-                            } else if (S.hits[S.hit].dt == 0) {
-                                S.hit -= 1;
+                    // anda pra tras removendo todos os golpes
+                    // para quando achar o ultimo saque, remove ele tambem
+                    //      ou quando nao houve ultimo saque (inicio do jogo)
+                    while (1) {
+                        if (S.hit == 0) {
+                            break;  // inicio do jogo
+                        } else {
+                            Hit* hit = &S.hits[S.hit-1];
+                            if (hit->dt==0 && hit->kmh!=0) {
+                                S.hit -= 1; // achei um saque, removo e termino
                                 break;
                             }
                         }
-                        tone(PIN_TONE, NOTE_C2, 100);
-                        delay(110);
-                        tone(PIN_TONE, NOTE_C3, 100);
-                        delay(110);
-                        tone(PIN_TONE, NOTE_C4, 300);
-                        delay(310);
-                        EEPROM_Save();
-                        PT_All();
-                        XMOD(Serial_Score(), PC_Atualiza());
+                        S.hit -= 1; // vou removendo
                     }
+                    tone(PIN_TONE, NOTE_C2, 100);
+                    delay(110);
+                    tone(PIN_TONE, NOTE_C3, 100);
+                    delay(110);
+                    tone(PIN_TONE, NOTE_C4, 300);
+                    delay(310);
+                    EEPROM_Save();
+                    PT_All();
+                    XMOD(Serial_Score(), PC_Atualiza());
+                    break;
                 case IN_GO_FALL:
                     goto _BREAK1;
             }
@@ -515,9 +520,6 @@ _TIMEOUT:
         } else if (got == IN_RESTART) {
             goto _RESTART;
         } else if (got == IN_UNDO) {
-            if (G.quedas >= ABORT_FALLS) {
-                S.hit--;    // reverse above
-            }
             goto _UNDO;
         }
     }
