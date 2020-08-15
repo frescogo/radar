@@ -81,7 +81,6 @@ typedef unsigned long u32;
 
 #define SOUND_DT        100
 
-static int  STATE;
 static char STR[64];
 
 typedef enum {
@@ -93,7 +92,7 @@ TMOD MOD;
 
 typedef struct {    // { 0,kmh } --> saque
     u8 dt;          // 10        --> 10*100ms --> 1s
-    s8 kmh;
+    s8 kmh;         // { 0,0   } --> queda
 } Hit;
 
 typedef struct {
@@ -120,6 +119,7 @@ typedef struct {
     // calculated when required
     u32  time;                        // ms (total time)
     u8   saques;
+    u8   quedas;
     u16  ataques;
     u16  pontos;
     Jog  jogs[2];
@@ -137,11 +137,6 @@ enum {
     IN_LEFT,
     IN_RIGHT
 };
-
-int Falls (void) {
-    return G.saques - (STATE==STATE_IDLE ? 0 : 1);
-                        // after fall
-}
 
 // tom dos golpes            50-      50-60    60-70    70-80    80+
 static const int NOTES[] = { NOTE_E3, NOTE_E5, NOTE_G5, NOTE_B5, NOTE_D6 };
@@ -297,7 +292,6 @@ void Desc (u32 now, u32* desc0, bool desconto) {
 void loop (void)
 {
 // RESTART
-    STATE = STATE_IDLE;
     PT_All();
 
     XMOD(CEL_Restart(), PC_Restart());
@@ -310,7 +304,7 @@ void loop (void)
         if (G.time >= S.timeout) {
             goto _TIMEOUT;          // if reset on ended game
         }
-        if (Falls() >= ABORT_FALLS) {
+        if (G.quedas >= ABORT_FALLS) {
             goto _TIMEOUT;
         }
 
@@ -409,7 +403,6 @@ _BREAK2:
         Sound(kmh);
         XMOD(CEL_Service(is_in), PC_Nop());
         XMOD(CEL_Hit(is_in,kmh), PC_Hit(is_in,kmh));
-        STATE = STATE_PLAYING;
         PT_All();
 
         while (1)
@@ -486,11 +479,7 @@ _BREAK2:
             XMOD(CEL_Hit(is_in,kmh), PC_Hit(is_in,kmh));
         }
 _FALL:
-        if (Falls() >= ABORT_FALLS) {
-            S.hits[S.hit++] = { 0, 0 }; // emula um saque nulo pra contar essa queda
-        }
-
-        STATE = STATE_IDLE;
+        S.hits[S.hit++] = { 0, 0 };
 
         tone(PIN_TONE, NOTE_C4, 100);
         delay(110);
@@ -506,7 +495,6 @@ _FALL:
     }
 
 _TIMEOUT:
-    STATE = STATE_TIMEOUT;
     tone(PIN_TONE, NOTE_C2, 2000);
     PT_All();
     XMOD(CEL_Nop(), PC_Tick());
@@ -521,8 +509,7 @@ _TIMEOUT:
         } else if (got == IN_RESTART) {
             goto _RESTART;
         } else if (got == IN_UNDO) {
-            STATE = STATE_IDLE;
-            if (Falls() >= ABORT_FALLS) {
+            if (G.quedas >= ABORT_FALLS) {
                 S.hit--;    // reverse above
             }
             goto _UNDO;

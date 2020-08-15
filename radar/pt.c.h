@@ -38,6 +38,7 @@ int PT_Behind (void) {
 void PT_All (void) {
     G.time    = 0;
     G.saques  = 0;
+    G.quedas  = 0;
     G.ataques = 0;
 
     static u8 bests[2][REF_HITS]; // kmh
@@ -55,7 +56,11 @@ void PT_All (void) {
         int is_in = (kmh_ < 0);
 
         if (dt == 0) {
-            G.saques++;
+            if (kmh == 0) {
+                G.quedas++;
+            } else {
+                G.saques++;
+            }
         }
 
         G.time += dt;
@@ -95,7 +100,7 @@ void PT_All (void) {
     u16 avg, min_;
     PT_Equ(&avg,&min_);
 
-    int pct    = Falls() * CONT_PCT;
+    int pct    = G.quedas * CONT_PCT;
     u32 pontos = (S.equilibrio ? min_ : avg);
     G.pontos   = pontos * (10000-pct) / 10000;
 }

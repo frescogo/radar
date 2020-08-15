@@ -38,7 +38,7 @@ void Serial_Score (void) {
     Serial.println("s");
 
     Serial.print(F("Quedas ............. "));
-    Serial.println(Falls());
+    Serial.println(G.quedas);
 
     Serial.print(F("Ataques ............ "));
     Serial.println(G.ataques);
@@ -115,14 +115,14 @@ void Serial_Log (void) {
     PT_Equ(&avg,&min_);
 
     u16 equ = (!S.equilibrio ? 0 : avg - min_);
-    u16 pct = Falls() * CONT_PCT;
+    u16 pct = G.quedas * CONT_PCT;
 
     sprintf_P(STR, PSTR("Media ...........  %4d"), avg);
     Serial.print(STR);
     Serial.println(F("  pontos"));
     sprintf_P(STR, PSTR("Equilibrio ......  %4d  (-)"), equ);
     Serial.println(STR);
-    sprintf_P(STR, PSTR("Quedas (%02d) ..... %2d.%02d%% (-)"), Falls(), pct/100,pct%100);
+    sprintf_P(STR, PSTR("Quedas (%02d) ..... %2d.%02d%% (-)"), G.quedas, pct/100,pct%100);
     Serial.println(STR);
     sprintf_P(STR, PSTR("TOTAL ...........  %4d"), G.pontos);
     Serial.print(STR);

@@ -23,7 +23,7 @@ void PC_Seq (void) {
     Serial.print(F(";"));
     Serial.print(S.descanso/100);       // tempo de descanso em s
     Serial.print(F(";"));
-    Serial.print(Falls());              // total de quedas
+    Serial.print(G.quedas);             // total de quedas
     Serial.print(F(";"));
     Serial.print(S.names[0]);           // atleta a esquerda
     Serial.print(F(";"));
@@ -72,7 +72,7 @@ void PC_Tick (void) {
 void PC_Fall (void) {
     Serial.print(PC_FALL);              // codigo de queda
     Serial.print(F(";"));
-    Serial.print(Falls());              // total de quedas
+    Serial.print(G.quedas);             // total de quedas
     Serial.print(F(";"));
     PC_Player(0);
     PC_Player(1);
