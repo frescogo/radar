@@ -174,7 +174,7 @@ int Await_Input (bool serial, bool hold, s8* kmh) {
 
         if (kmh != NULL) {
             Radar_S s;
-            int val = radar_read(&s);
+            int val = 0; //radar_read(&s);
             if (val != 0) {
                 *kmh = val/10;
                 return IN_RADAR;
@@ -271,21 +271,6 @@ void setup (void) {
     }
 
     EEPROM_Load();
-}
-
-u32 alarm (void) {
-    u32 left = S.timeout - G.time;
-    if (left < 5000) {
-        return S.timeout - 0;
-    } else if (left < 10000) {
-        return S.timeout - 5000;
-    } else if (left < 30000) {
-        return S.timeout - 10000;
-    } else if (left < 60000) {
-        return S.timeout - 30000;
-    } else {
-        return (G.time/60000 + 1) * 60000;
-    }
 }
 
 #define XMOD(xxx,yyy)   \
@@ -466,13 +451,7 @@ _BREAK2:
             dt = min(dt/100, 255);              // maximo DT=25.500ms
             S.hits[S.hit++] = { (u8)dt, kmh_ };
 
-            u8 al_now = 0;
-            if (G.time+dt*100 > alarm()) {
-                tone(PIN_TONE, NOTE_C7, 250);
-                al_now = 1;
-            } else if (kmh >= HIT_KMH_50){
-                Sound(kmh);
-            }
+            u32 otime = G.time;
 
             PT_All();
             XMOD(CEL_Nop(), PC_Tick());
@@ -487,9 +466,22 @@ _BREAK2:
                 goto _TIMEOUT;
             }
 
-            if (!al_now && kmh>=HIT_KMH_50 && S.equilibrio && G.time>=30000 && PT_Behind()==is_in) {
-                delay(SOUND_DT*3/2);
-                tone(PIN_TONE, NOTE_C2, SOUND_DT/2);
+            // alarme de 30s
+            if (((S.timeout-otime) > 30000) && ((S.timeout-G.time) <= 30000)) {
+                tone(PIN_TONE, NOTE_C7, 75);
+                delay(125);
+                tone(PIN_TONE, NOTE_C7, 75);
+                delay(125);
+                tone(PIN_TONE, NOTE_C7, 75);
+                delay(125);
+
+            // golpe valido
+            } else if (kmh >= HIT_KMH_50){
+                Sound(kmh);
+                if (S.equilibrio && G.time>=30000 && PT_Behind()==!is_in) {
+                    delay(SOUND_DT*3/2);
+                    tone(PIN_TONE, NOTE_C2, SOUND_DT/2);
+                }
             }
             XMOD(CEL_Hit(is_in,kmh), PC_Hit(is_in,kmh));
         }
